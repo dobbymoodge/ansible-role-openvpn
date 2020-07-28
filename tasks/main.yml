@@ -8,6 +8,11 @@
     - "../vars/empty.yml"
   tags: [always]
 
+- name: Install OpenVPN
+  import_tasks: install.yml
+  tags:
+    - install
+
 - name: Set facts
   import_tasks: set_facts.yml
   tags: [always]
@@ -17,11 +22,6 @@
   when: openvpn_uninstall
   tags:
     - uninstall
-
-- name: Install OpenVPN
-  import_tasks: install.yml
-  tags:
-    - install
 
 - name: Copy or Generate server keys
   import_tasks: server_keys.yml

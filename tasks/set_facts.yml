@@ -4,18 +4,24 @@
   when: ansible_virtualization_role is defined and ansible_virtualization_type == "docker" and ansible_virtualization_role == "guest"
   register: docker_stat_result
 
+# Run the service_facts module so we can detect e.g. systemd
+# `service-name@.service` definitions. Specifically for finding
+# `openvpn-server@.service` in RedHat-family systems.
+- name: Populate service facts
+  service_facts:
+
 - name: Set systemd openvpn service name
   set_fact:
     openvpn_service_name: "openvpn@{{openvpn_config_file}}.service"
-  when: ansible_service_mgr == "systemd" or (docker_stat_result.stat is defined and docker_stat_result.stat.exists == True)
+  when: '"openvpn@.service" in ansible_facts.services or (docker_stat_result.stat is defined and docker_stat_result.stat.exists == True)'
 
-# Fedora and CentOS 8 separate OpenVPN into client and server
-- name: Set Fedora 27+ and CentOS 8 service name
+# Fedora/CentOS/RHEL separate OpenVPN into client and server
+- name: Set RedHat OS family service name
   set_fact:
     openvpn_service_name: "openvpn-server@{{openvpn_config_file}}.service"
-  when: (ansible_distribution == "Fedora" and ansible_distribution_version|int >= 27) or (ansible_distribution == "CentOS" and ansible_distribution_version|int >= 8)
+  when: ansible_os_family == "RedHat" and "openvpn-server@.service" in ansible_facts.services
 
-- name: Set Fedora 27+ and CentOS 8 OpenVPN base path
+- name: Set RedHat OS family OpenVPN base path
   set_fact:
     openvpn_base_dir: "/etc/openvpn/server"
-  when: (ansible_distribution == "Fedora" and ansible_distribution_version|int >= 27) or (ansible_distribution == "CentOS" and ansible_distribution_version|int >= 8)
+  when: ansible_os_family == "RedHat" and "openvpn-server@.service" in ansible_facts.services
